@@ -1,0 +1,51 @@
+name: Android Debug APK
+
+on:
+  push:
+    branches:
+      - android-port
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.6.2
+  EXPORT_NAME: OpenRPG-Android-debug
+
+jobs:
+  android-debug:
+    name: Build ARM64 debug APK
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.6.2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Configure Godot CI environment
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          mkdir -p ~/.config
+          if [ -d /root/.config/godot ]; then
+            mv /root/.config/godot ~/.config/godot
+          fi
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable \
+            ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Import project and validate scripts
+        run: godot --headless --verbose --editor --quit --path .
+
+      - name: Export Android debug APK
+        run: |
+          mkdir -p build/android
+          godot --headless --verbose --path . \
+            --export-debug "Android Debug" \
+            "$(pwd)/build/android/${EXPORT_NAME}.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: openrpg-android-debug
+          path: build/android/${{ env.EXPORT_NAME }}.apk
+          if-no-files-found: error
