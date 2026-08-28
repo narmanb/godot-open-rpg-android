@@ -4,6 +4,8 @@
 ## Additionally, game-wide player based signals are emitted from here.
 extends Node
 
+const MOBILE_CONTROLS_SCRIPT := preload("res://src/mobile/mobile_controls.gd")
+
 ## Emitted whenever the player's gamepiece changes.
 signal gamepiece_changed
 
@@ -18,3 +20,12 @@ var gamepiece: Gamepiece = null:
 		if value != gamepiece:
 			gamepiece = value
 			gamepiece_changed.emit()
+
+
+func _ready() -> void:
+	# The Android fork is phone-first. Keep the upstream desktop UI untouched and add the mobile
+	# overlay only in Android exports. Physical gamepad support can remain a later concern.
+	if OS.get_name() == "Android":
+		var mobile_controls := MOBILE_CONTROLS_SCRIPT.new()
+		mobile_controls.name = "MobileControls"
+		add_child(mobile_controls)
